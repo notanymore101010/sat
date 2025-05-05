@@ -37,11 +37,10 @@ function CollectEgg()
                 for _, obj in pairs(workspace:GetChildren()) do
                     if string.find(obj.Name, prop.Name) then
                         hrp.CFrame = obj:GetPivot()
-                        task.wait(1.5)
+                        task.wait(1)
                         for _, desc in pairs(obj:GetDescendants()) do
                             if desc:IsA("ProximityPrompt") then
                                 fireproximityprompt(desc)
-                                task.wait(1.5)
                             end
                         end
                     end

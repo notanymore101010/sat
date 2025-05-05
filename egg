@@ -1,13 +1,22 @@
 repeat
     task.wait(1)
 until game:IsLoaded()
-task.wait(5)
+task.wait(10)
 queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg'))()")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local TeleportService = game:GetService("TeleportService")
 local RunService = game:GetService("RunService")
+
+local UiState = require(player.PlayerScripts.TS.ui.states)
+local ScreenStates = UiState.ScreenStates
+local OneScreenType = UiState.OneScreenType
+ScreenStates.CurrentOneTypeScreen(OneScreenType.NONE)
+if not ScreenStates.BattleHidden() then
+    ScreenStates.BattleHidden(true)
+end
+
 player.PlayerGui.ChildAdded:Connect(function(v)
     if v.Name == "reward-ui" then
         for _,v2 in pairs(v:GetDescendants()) do

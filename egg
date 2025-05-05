@@ -1,3 +1,7 @@
+repeat
+    task.wait(1)
+until game:IsLoaded()
+
 function Check()
     for _,v in pairs(workspace:GetChildren()) do
         for _,v2 in pairs(game:GetService("ReplicatedStorage").props:GetChildren()) do
@@ -10,16 +14,13 @@ function Check()
 end
 
 function CollectEgg()
-    if not game:IsLoaded() then game.Loaded:Wait() end
     local player = game.Players.LocalPlayer
     local hrp = player.Character.HumanoidRootPart
-    local num = 0
     local TeleportService = game:GetService("TeleportService")
 
     for _,v in pairs(workspace:GetChildren()) do
         for _,v2 in pairs(game:GetService("ReplicatedStorage").props:GetChildren()) do
             if string.find(v.Name, v2.Name) then
-                num = num + 1
                 hrp.CFrame = v:GetPivot()
                 task.wait(1.5)
                 for _,desc in pairs(v:GetDescendants()) do
@@ -31,13 +32,13 @@ function CollectEgg()
             end
         end
     end
+
     queue_on_teleport(loadstring(game:HttpGet("https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg"))())
     player:Kick("\nRejoining..")
     TeleportService:Teleport(game.PlaceId, player)
 end
 
-repeat 
+while not Check() do
     CollectEgg()
-    Check()
     task.wait(1)
-until not Check
+end

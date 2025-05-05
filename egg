@@ -14,6 +14,31 @@ local priorities = {
     "egg_common"
 }
 
+function TakeAbreakInf()
+    local LocalUser = require(game:GetService("ReplicatedStorage").TS.user["local"]["local-user"]).LocalUser
+    local m2 = require(game:GetService("ReplicatedStorage").TS.user.settings["user-settings"]).UserSetting
+    local UiState = require(player.PlayerScripts.TS.ui.states)
+    local ScreenStates = UiState.ScreenStates
+    local OneScreenType = UiState.OneScreenType
+
+    LocalUser.settings:set(m2.INFINITE_TOWER_AUTO_ADVANCE_TIMER,10)
+    if ScreenStates.BattleHidden() then
+        ScreenStates.BattleHidden(false)
+    end
+
+    local invbreak = player.PlayerGui:FindFirstChild("infinite-tower-floor-summary")
+    if invbreak then
+        ScreenStates.CurrentOneTypeScreen(OneScreenType.NONE)
+        if not ScreenStates.BattleHidden() then
+            ScreenStates.BattleHidden(true)
+        end
+        LocalUser.infiniteTower:pause()
+        LocalUser.settings:set(m2.INFINITE_TOWER_AUTO_ADVANCE_TIMER,1)
+    else
+        return
+    end
+end
+
 function Check()
     for _, priority in ipairs(priorities) do
         for _, prop in pairs(props:GetChildren()) do
@@ -40,6 +65,7 @@ function CollectEgg()
                         task.wait(1.5)
                         for _, desc in pairs(obj:GetDescendants()) do
                             if desc:IsA("ProximityPrompt") then
+                                TakeAbreakInf()
                                 fireproximityprompt(desc)
                             end
                         end

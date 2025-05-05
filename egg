@@ -2,12 +2,27 @@ repeat
     task.wait(1)
 until game:IsLoaded()
 task.wait(15)
-queue_on_teleport(game:HttpGet("https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg"))
+
+local player = game.Players.LocalPlayer
+local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+local TeleportService = game:GetService("TeleportService")
+local props = game:GetService("ReplicatedStorage").props
+
+local priorities = {
+    "egg_legendary",
+    "egg_rare",
+    "egg_common"
+}
+
 function Check()
-    for _,v in pairs(workspace:GetChildren()) do
-        for _,v2 in pairs(game:GetService("ReplicatedStorage").props:GetChildren()) do
-            if string.find(v.Name, v2.Name) then
-                return true
+    for _, priority in ipairs(priorities) do
+        for _, prop in pairs(props:GetChildren()) do
+            if string.find(prop.Name, priority) then
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if string.find(obj.Name, prop.Name) then
+                        return true
+                    end
+                end
             end
         end
     end
@@ -16,32 +31,31 @@ end
 
 function CollectEgg()
     if not game:IsLoaded() then game.Loaded:Wait() end
-    local player = game.Players.LocalPlayer
-    local hrp = player.Character.HumanoidRootPart
-    local num = 0
-    local TeleportService = game:GetService("TeleportService")
-
-    for _,v in pairs(workspace:GetChildren()) do
-        for _,v2 in pairs(game:GetService("ReplicatedStorage").props:GetChildren()) do
-            if string.find(v.Name, v2.Name) then
-                num = num + 1
-                hrp.CFrame = v:GetPivot()
-                task.wait(1.5)
-                for _,desc in pairs(v:GetDescendants()) do
-                    if desc:IsA("ProximityPrompt") then
-                        fireproximityprompt(desc)
+    for _, priority in ipairs(priorities) do
+        for _, prop in pairs(props:GetChildren()) do
+            if string.find(prop.Name, priority) then
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if string.find(obj.Name, prop.Name) then
+                        hrp.CFrame = obj:GetPivot()
                         task.wait(1.5)
+                        for _, desc in pairs(obj:GetDescendants()) do
+                            if desc:IsA("ProximityPrompt") then
+                                fireproximityprompt(desc)
+                                task.wait(1.5)
+                            end
+                        end
                     end
                 end
             end
         end
     end
+
+    queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg'))()")
     player:Kick("\nRejoining..")
     TeleportService:Teleport(game.PlaceId, player)
 end
 
-repeat 
+repeat
     CollectEgg()
-    Check()
     task.wait(1)
 until not Check()

@@ -1,72 +1,169 @@
 repeat
     task.wait(1)
 until game:IsLoaded()
-task.wait(15)
-
-local player = game.Players.LocalPlayer
-local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+task.wait(5)
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local TeleportService = game:GetService("TeleportService")
-local props = game:GetService("ReplicatedStorage").props
-
-local priorities = {
-    "egg_legendary",
-    "egg_rare",
-    "egg_common"
-}
-
-function TakeAbreakInf()
-    local LocalUser = require(game:GetService("ReplicatedStorage").TS.user["local"]["local-user"]).LocalUser
-    local m2 = require(game:GetService("ReplicatedStorage").TS.user.settings["user-settings"]).UserSetting
-    local UiState = require(player.PlayerScripts.TS.ui.states)
-    local ScreenStates = UiState.ScreenStates
-    local OneScreenType = UiState.OneScreenType
-
-    LocalUser.settings:set(m2.INFINITE_TOWER_AUTO_ADVANCE_TIMER,10)
-    if ScreenStates.BattleHidden() then
-        ScreenStates.BattleHidden(false)
-    end
-
-    local invbreak = player.PlayerGui:FindFirstChild("infinite-tower-floor-summary")
-    if invbreak then
-        ScreenStates.CurrentOneTypeScreen(OneScreenType.NONE)
-        if not ScreenStates.BattleHidden() then
-            ScreenStates.BattleHidden(true)
-        end
-        LocalUser.infiniteTower:pause()
-        LocalUser.settings:set(m2.INFINITE_TOWER_AUTO_ADVANCE_TIMER,1)
-    else
-        return
-    end
-end
-
-function Check()
-    for _, priority in ipairs(priorities) do
-        for _, prop in pairs(props:GetChildren()) do
-            if string.find(prop.Name, priority) then
-                for _, obj in pairs(workspace:GetChildren()) do
-                    if string.find(obj.Name, prop.Name) then
-                        return true
-                    end
-                end
+local RunService = game:GetService("RunService")
+player.PlayerGui.ChildAdded:Connect(function(v)
+    if v.Name == "reward-ui" then
+        for _,v2 in pairs(v:GetDescendants()) do
+            if v2:IsA("TextButton") then
+                game:GetService("GuiService").SelectedObject = v2
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
             end
         end
     end
-    return false
+end)
+
+function FpsBoost()
+    if workspace:FindFirstChild("lobby") then
+        for _,v in pairs(workspace.lobby:GetChildren()) do
+            if v:IsA("Model") or v:IsA("MeshPart") or v:IsA("Part") then
+                v:Destroy()
+            end
+        end
+    end
+
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+
+    for _, v in pairs(workspace:GetChildren()) do
+        if v:IsA("Model") and not (v.Name == player.Name or v.Name == "Body" or string.find(v.Name, "egg") or v.Name == "Camera" or v.Name == "Terrain") then
+            v:Destroy()
+        end
+    end
 end
 
+function getRoot(character)
+    return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Humanoid")
+end
+
+local bodyVelocity, bodyGyro, flyConnection
+
+function stopMobileFly(speaker)
+    local character = speaker.Character
+    if not character then
+        return
+    end
+
+    if bodyVelocity and bodyVelocity.Parent then
+        bodyVelocity:Destroy()
+    end
+    if bodyGyro and bodyGyro.Parent then
+        bodyGyro:Destroy()
+    end
+
+    if flyConnection then
+        flyConnection:Disconnect()
+    end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.PlatformStand = false
+    end
+end
+
+function mobileFly(speaker)
+    local character = speaker.Character
+    if not character or not character:FindFirstChild("Humanoid") then
+        return
+    end
+
+    local root = getRoot(character)
+    local camera = workspace.CurrentCamera
+    local noVelocity = Vector3.new()
+    local zeroForce = Vector3.new(0, 0, 0)
+    local maxForce = Vector3.new(9e9, 9e9, 9e9)
+    local controlModule = require(speaker.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
+
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Name = "VelocityHandler"
+    bodyVelocity.Parent = root
+    bodyVelocity.MaxForce = zeroForce
+    bodyVelocity.Velocity = noVelocity
+
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.Name = "GyroHandler"
+    bodyGyro.Parent = root
+    bodyGyro.MaxTorque = maxForce
+    bodyGyro.P = 1000
+    bodyGyro.D = 50
+
+    speaker.CharacterAdded:Connect(function(newCharacter)
+        local newRoot = getRoot(newCharacter)
+        bodyVelocity.Parent = newRoot
+        bodyGyro.Parent = newRoot
+        bodyVelocity.MaxForce = zeroForce
+        bodyVelocity.Velocity = noVelocity
+    end)
+
+    flyConnection = RunService.RenderStepped:Connect(function()
+        root = getRoot(speaker.Character)
+        camera = workspace.CurrentCamera
+
+        if speaker.Character:FindFirstChildWhichIsA("Humanoid") and root and root:FindFirstChild("VelocityHandler") and root:FindFirstChild("GyroHandler") then
+            local humanoid = speaker.Character:FindFirstChildWhichIsA("Humanoid")
+            local velocityHandler = root:FindFirstChild("VelocityHandler")
+            local gyroHandler = root:FindFirstChild("GyroHandler")
+
+            velocityHandler.MaxForce = maxForce
+            gyroHandler.MaxTorque = maxForce
+            humanoid.PlatformStand = true
+            gyroHandler.CFrame = camera.CFrame
+            velocityHandler.Velocity = noVelocity
+            local moveDirection = controlModule:GetMoveVector()
+
+            if moveDirection.X > 0 then
+                velocityHandler.Velocity = velocityHandler.Velocity + camera.CFrame.RightVector * (moveDirection.X * getgenv().flyspeed * 50)
+            elseif moveDirection.X < 0 then
+                velocityHandler.Velocity = velocityHandler.Velocity + camera.CFrame.RightVector * (moveDirection.X * getgenv().flyspeed * 50)
+            end
+
+            if moveDirection.Z > 0 then
+                velocityHandler.Velocity = velocityHandler.Velocity - camera.CFrame.LookVector * (moveDirection.Z * getgenv().flyspeed * 50)
+            elseif moveDirection.Z < 0 then
+                velocityHandler.Velocity = velocityHandler.Velocity - camera.CFrame.LookVector * (moveDirection.Z * getgenv().flyspeed * 50)
+            end
+        end
+    end)
+end
+
+local egg_legendary = 0
+local egg_rare = 0
+local egg_common = 0
+
 function CollectEgg()
-    if not game:IsLoaded() then game.Loaded:Wait() end
-    for _, priority in ipairs(priorities) do
+    local player = game.Players.LocalPlayer
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local TeleportService = game:GetService("TeleportService")
+    local props = game:GetService("ReplicatedStorage").props
+    local num = 0
+
+    local function handleEgg(priority)
         for _, prop in pairs(props:GetChildren()) do
             if string.find(prop.Name, priority) then
                 for _, obj in pairs(workspace:GetChildren()) do
                     if string.find(obj.Name, prop.Name) then
+                        num = num + 1
                         hrp.CFrame = obj:GetPivot()
-                        task.wait(1.5)
+                        repeat task.wait() until player.GameplayPaused == false
+                        task.wait(1)
                         for _, desc in pairs(obj:GetDescendants()) do
                             if desc:IsA("ProximityPrompt") then
-                                TakeAbreakInf()
+                                if not getgenv().Egg then break end
                                 fireproximityprompt(desc)
+                                if obj.Name == "egg_legendary" then
+                                    egg_legendary = egg_legendary + 1
+                                elseif obj.Name == "egg_rare" then
+                                    egg_rare = egg_rare + 1
+                                elseif obj.Name == "egg_common" then
+                                    egg_common = egg_common + 1
+                                end
+                                task.wait(0.5)
                             end
                         end
                     end
@@ -74,13 +171,22 @@ function CollectEgg()
             end
         end
     end
+    if not getgenv().Egg then return end
+    handleEgg("egg_legendary")
+    handleEgg("egg_rare")
+    handleEgg("egg_common")
 
-    queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg'))()")
-    player:Kick("\nRejoining..")
-    TeleportService:Teleport(game.PlaceId, player)
+    if getgenv().EggRejoin and num == 0 then
+        player:Kick("Total Egg Collected\n Legendary = " .. egg_legendary .."\n Rare = " .. egg_rare .. "\nCommon = " .. egg_common)
+        TeleportService:Teleport(game.PlaceId, player)
+    end
 end
 
-repeat
+getgenv().Egg = true
+getgenv().EggRejoin = true
+FpsBoost()
+mobileFly(player)
+while getgenv().Egg do
     CollectEgg()
     task.wait(1)
-until not Check()
+end

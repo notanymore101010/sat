@@ -33,7 +33,7 @@ function CollectEgg()
         end
     end
 
-    queue_on_teleport(loadstring(game:HttpGet("https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg"))())
+    queue_on_teleport(game:HttpGet("https://raw.githubusercontent.com/notanymore101010/sat/refs/heads/main/egg"))
     player:Kick("\nRejoining..")
     TeleportService:Teleport(game.PlaceId, player)
 end

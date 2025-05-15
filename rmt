@@ -1,5 +1,5 @@
 getgenv().Remotes = {
-    Potion = "b1b30872-9a12-49e5-b4fb-15b4261c15e6",
-    CraftPotion = "33a5fd34-c085-419f-a865-b5b1115ad945",
-    Quest = "f1e6a8e6-974b-41b8-a79d-c0e7d6b5db6d"
+    Potion = "ce810076-bac2-446b-ba1d-cd207632854e",
+    CraftPotion = "4617a006-d67f-4656-817e-0df902d29c66",
+    Quest = "138b4fe9-3756-4216-9a8a-a4f2ba43ff5c"
 }
